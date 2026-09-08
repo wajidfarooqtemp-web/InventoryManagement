@@ -1,0 +1,11 @@
+-- ============================================================================
+-- 0006_movements_nullable_created_by.sql
+-- Opening-balance movements are created automatically by the system when a
+-- new month starts (Phase 4/5), not by a person - so created_by must be
+-- allowed to be null for THAT movement type only. Every human-initiated
+-- movement (Receive/Use/Adjust/Transfer) will still always have a real
+-- created_by - this is enforced in application code, not by the database,
+-- since the database can't distinguish "system" from "a person forgot to
+-- pass their id".
+-- ============================================================================
+alter table public.stock_movements alter column created_by drop not null;
