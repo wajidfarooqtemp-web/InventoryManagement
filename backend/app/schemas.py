@@ -48,6 +48,7 @@ class InventoryItemOut(BaseModel):
     category_id: UUID
     category_name: str
     image_path: Optional[str] = None
+    image_url: Optional[str] = None  # short-lived signed URL, computed per-request - never stored
     unit: str
     package_size: Optional[float] = None
     package_unit: Optional[str] = None

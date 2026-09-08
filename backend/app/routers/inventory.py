@@ -10,7 +10,8 @@ Phase 4, through a stock movement, inside its own transaction.
 from typing import Optional
 from uuid import UUID
 import asyncio
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
+from app.rate_limit import limiter
 from app.image_processing import validate_and_process_image
 from app.storage import upload_image, sign_url, delete_image
 from app.database import get_pool
@@ -188,7 +189,9 @@ async def deactivate_item(item_id: UUID, user: CurrentUser = Depends(require_rol
 async def reactivate_item(item_id: UUID, user: CurrentUser = Depends(require_role("admin"))):
     return await _set_active(item_id, True, user)
 @router.post("/{item_id}/image", response_model=InventoryItemOut)
+@limiter.limit("10/minute")
 async def upload_item_image(
+    request: Request,
     item_id: UUID,
     file: UploadFile = File(...),
     user: CurrentUser = Depends(require_role("manager", "admin")),

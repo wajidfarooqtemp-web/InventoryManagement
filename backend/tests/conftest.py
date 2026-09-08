@@ -8,7 +8,6 @@ you consider production data.
 import os
 import httpx
 import pytest_asyncio
-from dotenv import load_dotenv
 from httpx import ASGITransport, AsyncClient
 from app.main import app
 
