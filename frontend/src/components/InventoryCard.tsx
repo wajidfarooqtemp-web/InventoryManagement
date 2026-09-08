@@ -14,7 +14,7 @@ type Item = {
   monthly_requirement_max: number | null
   requirement_is_estimate: boolean
   needs_confirmation: boolean
-  image_path: string | null
+  image_url: string | null
   status: 'GOOD' | 'LOW' | 'CRITICAL' | 'OUT_OF_STOCK'
 }
 
@@ -36,7 +36,7 @@ export function InventoryCard({ item, onStockChanged }: { item: Item; onStockCha
   return (
     <>
       <div className="bg-white/60 border border-cream-dark rounded-lg overflow-hidden flex flex-col">
-        <ItemPhoto name={item.name} imagePath={item.image_path} />
+        <ItemPhoto name={item.name} imageUrl={item.image_url} />
 
         <div className="p-4 flex-1 flex flex-col">
           <div className="flex items-start justify-between gap-2">

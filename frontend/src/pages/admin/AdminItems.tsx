@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { apiFetch } from '../../lib/apiClient'
+import { apiFetch, apiUpload } from '../../lib/apiClient'
 
 type Item = {
   id: string
@@ -55,7 +55,15 @@ export function AdminItems() {
       setMessage('Could not save changes. Please try again.')
     }
   }
-
+  async function uploadImage(item: Item, file: File) {
+    try {
+      await apiUpload(`/api/v1/inventory/${item.id}/image`, file)
+      setMessage(`${item.name} photo updated.`)
+      loadItems()
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : 'Could not upload image.')
+    }
+  }
   async function deactivateItem(item: Item) {
     if (!confirm(`Deactivate ${item.name}? It will be hidden from normal inventory views but its history is kept.`)) return
     await apiFetch(`/api/v1/inventory/${item.id}/deactivate`, { method: 'PATCH' })
@@ -82,7 +90,14 @@ export function AdminItems() {
                     reorder at {item.reorder_level ?? '—'}, critical at {item.critical_level ?? '—'}
                   </p>
                 </div>
-                <div className="flex gap-3 text-sm">
+                <div className="flex items-center gap-3 text-sm">
+                  <label className="text-accent cursor-pointer">
+                    Photo
+                    <input
+                      type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                      onChange={(e) => e.target.files?.[0] && uploadImage(item, e.target.files[0])}
+                    />
+                  </label>
                   <button onClick={() => setEditingId(item.id)} className="text-accent">Edit</button>
                   <button onClick={() => deactivateItem(item)} className="text-status-critical">Deactivate</button>
                 </div>

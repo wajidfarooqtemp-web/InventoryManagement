@@ -9,7 +9,10 @@ Phase 4, through a stock movement, inside its own transaction.
 """
 from typing import Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException
+import asyncio
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from app.image_processing import validate_and_process_image
+from app.storage import upload_image, sign_url, delete_image
 from app.database import get_pool
 from app.security import get_current_user, CurrentUser
 from app.dependencies import require_role
@@ -33,6 +36,16 @@ def _with_status(row) -> dict:
     d = dict(row)
     d["status"] = calculate_status(d["current_stock"], d["reorder_level"], d["critical_level"])
     return d
+async def _attach_image_urls(items: list[dict]) -> list[dict]:
+    """
+    Signs a URL for every item that has an image, concurrently rather than
+    one at a time - keeps list responses fast as more items get photos.
+    Items with no image_path just get image_url = None.
+    """
+    async def resolve(item):
+        item["image_url"] = await sign_url(item["image_path"]) if item.get("image_path") else None
+        return item
+    return list(await asyncio.gather(*(resolve(i) for i in items)))
 
 
 @router.get("", response_model=list[InventoryItemOut])
@@ -73,7 +86,7 @@ async def list_inventory(
     items = [_with_status(r) for r in rows]
     if status:
         items = [i for i in items if i["status"] == status.upper()]
-    return items
+    return await _attach_image_urls(items)
 
 
 @router.get("/{item_id}", response_model=InventoryItemOut)
@@ -82,7 +95,8 @@ async def get_inventory_item(item_id: UUID, user: CurrentUser = Depends(get_curr
     row = await pool.fetchrow(f"{_BASE_SELECT} where i.id = $1", item_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Item not found.")
-    return _with_status(row)
+    result = await _attach_image_urls([_with_status(row)])
+    return result[0]
 
 
 @router.post("", response_model=InventoryItemOut, status_code=201)
@@ -173,3 +187,38 @@ async def deactivate_item(item_id: UUID, user: CurrentUser = Depends(require_rol
 @router.patch("/{item_id}/reactivate", response_model=InventoryItemOut)
 async def reactivate_item(item_id: UUID, user: CurrentUser = Depends(require_role("admin"))):
     return await _set_active(item_id, True, user)
+@router.post("/{item_id}/image", response_model=InventoryItemOut)
+async def upload_item_image(
+    item_id: UUID,
+    file: UploadFile = File(...),
+    user: CurrentUser = Depends(require_role("manager", "admin")),
+):
+    raw_bytes = await file.read()
+    processed_bytes, extension, content_type = validate_and_process_image(raw_bytes)
+
+    pool = get_pool()
+    async with pool.acquire() as conn, conn.transaction():
+        before = await conn.fetchrow(f"{_BASE_SELECT} where i.id = $1", item_id)
+        if before is None:
+            raise HTTPException(status_code=404, detail="Item not found.")
+
+        old_path = before["image_path"]
+        new_path = await upload_image(processed_bytes, extension, content_type)
+
+        await conn.execute(
+            "update public.inventory_items set image_path=$2, updated_by=$3 where id=$1",
+            item_id, new_path, user.id,
+        )
+        after = await conn.fetchrow(f"{_BASE_SELECT} where i.id = $1", item_id)
+        await record_audit(conn, user.id, "item_image_changed", "inventory_item", str(item_id),
+                            {"image_path": old_path}, {"image_path": new_path})
+
+    if old_path:
+        # Best-effort cleanup of the old file. Not part of the DB
+        # transaction above (Storage isn't transactional with Postgres) -
+        # if this fails, an orphaned old file is a minor storage-cost
+        # issue, never a correctness or security one.
+        await delete_image(old_path)
+
+    result = await _attach_image_urls([_with_status(after)])
+    return result[0]

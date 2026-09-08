@@ -25,3 +25,23 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
   }
   return response.json()
 }
+// Separate from apiFetch because file uploads must NOT set
+// Content-Type: application/json - the browser needs to set its own
+// multipart boundary header for FormData to work correctly.
+export async function apiUpload(path: string, file: File) {
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await fetch(`${API_URL}${path}`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  })
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}))
+    throw new Error(body.detail || `Upload failed (${response.status})`)
+  }
+  return response.json()
+}
