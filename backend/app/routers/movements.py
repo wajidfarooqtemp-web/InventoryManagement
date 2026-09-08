@@ -6,7 +6,8 @@ history) or Transfer between locations.
 """
 from uuid import UUID
 from typing import Literal
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from app.rate_limit import limiter
 from pydantic import BaseModel, Field
 from app.database import get_pool
 from app.security import get_current_user, CurrentUser
@@ -49,7 +50,8 @@ async def _item_with_status(conn, item_id):
 
 
 @router.post("/{item_id}/receive")
-async def receive_stock(item_id: UUID, body: ReceiveOrUseRequest, user: CurrentUser = Depends(get_current_user)):
+@limiter.limit("30/minute")
+async def receive_stock(request: Request, item_id: UUID, body: ReceiveOrUseRequest, user: CurrentUser = Depends(get_current_user)):
     pool = get_pool()
     async with pool.acquire() as conn, conn.transaction():
         movement, _ = await create_movement(conn, item_id, "RECEIVE", body.quantity, user.id, body.idempotency_key)
@@ -58,7 +60,8 @@ async def receive_stock(item_id: UUID, body: ReceiveOrUseRequest, user: CurrentU
 
 
 @router.post("/{item_id}/use")
-async def use_stock(item_id: UUID, body: ReceiveOrUseRequest, user: CurrentUser = Depends(get_current_user)):
+@limiter.limit("30/minute")
+async def use_stock(request: Request, item_id: UUID, body: ReceiveOrUseRequest, user: CurrentUser = Depends(get_current_user)):
     pool = get_pool()
     async with pool.acquire() as conn, conn.transaction():
         movement, _ = await create_movement(conn, item_id, "USE", body.quantity, user.id, body.idempotency_key)
@@ -67,7 +70,8 @@ async def use_stock(item_id: UUID, body: ReceiveOrUseRequest, user: CurrentUser 
 
 
 @router.post("/{item_id}/adjust")
-async def adjust_stock(item_id: UUID, body: AdjustRequest, user: CurrentUser = Depends(require_role("manager", "admin"))):
+@limiter.limit("20/minute")
+async def adjust_stock(request: Request, item_id: UUID, body: AdjustRequest, user: CurrentUser = Depends(require_role("manager", "admin"))):
     pool = get_pool()
     signed_quantity = body.quantity if body.direction == "increase" else -body.quantity
     async with pool.acquire() as conn, conn.transaction():
@@ -81,7 +85,8 @@ async def adjust_stock(item_id: UUID, body: AdjustRequest, user: CurrentUser = D
 
 
 @router.post("/{item_id}/transfer")
-async def transfer_stock(item_id: UUID, body: TransferRequest, user: CurrentUser = Depends(require_role("manager", "admin"))):
+@limiter.limit("20/minute")
+async def transfer_stock(request: Request, item_id: UUID, body: TransferRequest, user: CurrentUser = Depends(require_role("manager", "admin"))):
     """
     One transfer = two linked movements (OUT on the source item, IN on the
     destination item) in ONE transaction - both happen or neither does.
