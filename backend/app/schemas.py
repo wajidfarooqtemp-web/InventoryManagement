@@ -111,3 +111,45 @@ class InventoryItemUpdate(BaseModel):
     needs_confirmation: Optional[bool] = None
     confirmation_note: Optional[str] = None
     notes: Optional[str] = None
+    # ---------- Periods & activity (Phase 5) ----------
+
+class PeriodOut(BaseModel):
+    id: UUID
+    year: int
+    month: int
+    status: str
+    is_current: bool  # computed - true if this period matches today's year/month
+
+
+class PeriodItemSummaryOut(BaseModel):
+    period_id: UUID
+    item_id: UUID
+    item_name: str
+    location_name: str
+    unit: str
+    monthly_requirement: Optional[float] = None
+    monthly_requirement_min: Optional[float] = None
+    monthly_requirement_max: Optional[float] = None
+    opening_stock: float
+    received: float
+    used: float
+    adjustments: float
+    transfers_in: float
+    transfers_out: float
+    closing_stock: float
+
+
+class MovementOut(BaseModel):
+    id: UUID
+    item_id: UUID
+    item_name: str
+    location_name: str
+    period_id: UUID
+    movement_type: str
+    quantity: float
+    resulting_stock: float
+    reason: Optional[str] = None
+    related_transfer_id: Optional[UUID] = None
+    created_by: Optional[UUID] = None
+    created_by_name: Optional[str] = None  # null for system-generated OPENING_BALANCE rows
+    created_at: datetime
