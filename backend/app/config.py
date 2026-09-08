@@ -2,7 +2,8 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     environment: str = "development"
-    allowed_origins: str = "http://localhost:5173"
+    # Allow both local development and the production Vercel frontend.
+    allowed_origins: str = "http://localhost:5173,https://kanihomeinventory.vercel.app"
 
     # Added in Phase 2 - needed to talk to Supabase and verify login tokens.
     supabase_url: str = ""
