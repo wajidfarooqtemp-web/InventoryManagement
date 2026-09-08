@@ -198,3 +198,33 @@ class OverviewOut(BaseModel):
     items_needs_confirmation: int
     needs_attention: list[NeedsAttentionItemOut]
     recent_activity: list[MovementOut]
+    # ---------- Users (Phase 9) ----------
+
+class UserOut(BaseModel):
+    id: UUID
+    name: str
+    email: str
+    role: str
+    active: bool
+
+
+class UserRoleUpdate(BaseModel):
+    role: str  # validated against allowed roles in the router, not here
+
+
+class UserActiveUpdate(BaseModel):
+    active: bool
+
+
+# ---------- Data confirmation (Phase 9) ----------
+
+class DataConfirmationOut(BaseModel):
+    id: UUID
+    name: str
+    location_name: str
+    category_name: str
+    unit: str
+    monthly_requirement: Optional[float] = None
+    monthly_requirement_min: Optional[float] = None
+    monthly_requirement_max: Optional[float] = None
+    confirmation_note: Optional[str] = None
