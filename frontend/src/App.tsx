@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
 import { Overview } from './pages/Overview'
+import { Inventory } from './pages/Inventory'
 
 // Stand-ins for routes the Layout already links to, so navigation
 // doesn't dead-end while Inventory/Activity/Purchase List/Admin get
@@ -26,7 +27,7 @@ function App() {
             }
           >
             <Route path="/" element={<Overview />} />
-            <Route path="/inventory" element={<ComingSoon title="Inventory" />} />
+            <Route path="/inventory" element={<Inventory />} />
             <Route path="/activity" element={<ComingSoon title="Activity" />} />
             <Route path="/purchase-list" element={<ComingSoon title="Purchase List" />} />
             <Route path="/admin" element={<ComingSoon title="Admin" />} />
