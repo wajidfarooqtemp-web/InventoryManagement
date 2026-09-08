@@ -153,3 +153,24 @@ class MovementOut(BaseModel):
     created_by: Optional[UUID] = None
     created_by_name: Optional[str] = None  # null for system-generated OPENING_BALANCE rows
     created_at: datetime
+    # ---------- Purchase list (Phase 6) ----------
+
+class PurchaseListEntryOut(BaseModel):
+    id: UUID
+    item_id: UUID
+    item_name: str
+    location_name: str
+    unit: str
+    current_stock: float
+    monthly_requirement: Optional[float] = None
+    monthly_requirement_min: Optional[float] = None
+    monthly_requirement_max: Optional[float] = None
+    status: str  # needs_purchase / ordered / partially_received / received
+    quantity_ordered: Optional[float] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class PurchaseListEntryUpdate(BaseModel):
+    status: Optional[str] = None
+    quantity_ordered: Optional[float] = None

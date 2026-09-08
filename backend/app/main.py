@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import connect_db, disconnect_db
-from app.routers import profile, locations, categories, inventory, movements, periods, activity
+from app.routers import profile, locations, categories, inventory, movements, periods, activity, purchase
 
 app = FastAPI(title="Inventory System API")
 
@@ -34,7 +34,7 @@ app.include_router(inventory.router)
 app.include_router(movements.router)
 app.include_router(periods.router)
 app.include_router(activity.router)
-
+app.include_router(purchase.router)
 
 @app.get("/health")
 def health():
