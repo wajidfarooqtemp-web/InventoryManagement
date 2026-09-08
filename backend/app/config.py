@@ -12,5 +12,8 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+        extra = "ignore"  # .env also holds test-only vars (Phase 13) that
+                           # conftest.py reads directly via os.environ -
+                           # Settings doesn't need to know about those.
 
 settings = Settings()
