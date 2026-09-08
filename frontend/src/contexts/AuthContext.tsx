@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+// ReactNode is only a TypeScript type, so import it as a type.
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase } from '../lib/supabaseClient'
 import { apiFetch } from '../lib/apiClient'
 
