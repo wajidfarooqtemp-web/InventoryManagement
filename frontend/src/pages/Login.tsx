@@ -1,4 +1,5 @@
-import { useState, FormEvent } from 'react'
+// FormEvent is only a TypeScript type, so import it as a type.
+import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { ChinarMark } from '../components/ChinarMark'
