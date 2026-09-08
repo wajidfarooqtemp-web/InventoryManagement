@@ -174,3 +174,27 @@ class PurchaseListEntryOut(BaseModel):
 class PurchaseListEntryUpdate(BaseModel):
     status: Optional[str] = None
     quantity_ordered: Optional[float] = None
+    # ---------- Overview dashboard (Phase 7) ----------
+
+class NeedsAttentionItemOut(BaseModel):
+    item_id: UUID
+    item_name: str
+    location_name: str
+    unit: str
+    current_stock: float
+    monthly_requirement: Optional[float] = None
+    monthly_requirement_min: Optional[float] = None
+    monthly_requirement_max: Optional[float] = None
+    status: str  # LOW / CRITICAL / OUT_OF_STOCK only - GOOD items never appear here
+
+
+class OverviewOut(BaseModel):
+    total_active_items: int
+    total_locations: int
+    items_good: int
+    items_low: int
+    items_critical: int
+    items_out_of_stock: int
+    items_needs_confirmation: int
+    needs_attention: list[NeedsAttentionItemOut]
+    recent_activity: list[MovementOut]

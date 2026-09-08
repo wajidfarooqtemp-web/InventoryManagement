@@ -1,23 +1,40 @@
-import { useEffect, useState } from "react";
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from './contexts/AuthContext'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import { Layout } from './components/Layout'
+import { Login } from './pages/Login'
+import { Overview } from './pages/Overview'
 
-function App() {
-  const [status, setStatus] = useState("checking...");
-
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/health`)
-      .then((res) => res.json())
-      .then((data) => setStatus(`Backend says: ${data.status}`))
-      .catch(() => setStatus("Could not reach backend"));
-  }, []);
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold text-slate-800">Inventory System</h1>
-        <p className="mt-2 text-slate-500">{status}</p>
-      </div>
-    </div>
-  );
+// Stand-ins for routes the Layout already links to, so navigation
+// doesn't dead-end while Inventory/Activity/Purchase List/Admin get
+// built out for real in Phases 8-9.
+function ComingSoon({ title }: { title: string }) {
+  return <p className="text-ink-soft">{title} — coming in a later phase.</p>
 }
 
-export default App;
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/" element={<Overview />} />
+            <Route path="/inventory" element={<ComingSoon title="Inventory" />} />
+            <Route path="/activity" element={<ComingSoon title="Activity" />} />
+            <Route path="/purchase-list" element={<ComingSoon title="Purchase List" />} />
+            <Route path="/admin" element={<ComingSoon title="Admin" />} />
+          </Route>
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  )
+}
+
+export default App
