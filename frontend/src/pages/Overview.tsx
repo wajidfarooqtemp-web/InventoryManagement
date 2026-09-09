@@ -6,6 +6,7 @@ type NeedsAttentionItem = {
   item_id: string
   item_name: string
   location_name: string
+  category_name: string
   unit: string
   current_stock: number
   monthly_requirement: number | null
@@ -95,7 +96,7 @@ export function Overview() {
                 <div>
                   <p className="font-medium">{item.item_name}</p>
                   <p className="text-sm text-ink-soft">
-                    {item.location_name} · {item.current_stock} {item.unit} remaining · {formatRequirement(item)}
+                    {item.location_name} · {item.category_name} · {item.current_stock} {item.unit} remaining · {formatRequirement(item)}
                   </p>
                 </div>
                 <StatusBadge status={item.status} />

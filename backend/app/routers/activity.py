@@ -17,7 +17,8 @@ router = APIRouter(prefix="/api/v1", tags=["activity"])
 # Shared by both endpoints below so a movement always carries the same
 # readable item/location/user names, regardless of which view is asking.
 _MOVEMENT_SELECT = """
-    select m.*, i.name as item_name, l.name as location_name, u.name as created_by_name
+    select m.*, i.name as item_name, l.name as location_name,
+           u.name as created_by_name, u.email as created_by_email
     from public.stock_movements m
     join public.inventory_items i on i.id = m.item_id
     join public.locations l on l.id = i.location_id

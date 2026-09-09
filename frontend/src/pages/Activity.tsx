@@ -10,6 +10,7 @@ type Movement = {
   resulting_stock: number
   reason: string | null
   created_by_name: string | null
+  created_by_email: string | null
   created_at: string
 }
 type Location = { id: string; name: string }
@@ -78,7 +79,9 @@ export function Activity() {
               <span className="text-ink-soft"> · {m.location_name} · {formatMovement(m)}</span>
             </div>
             <span className="text-ink-soft">
-              {m.created_by_name ?? 'System'} · {new Date(m.created_at).toLocaleString()}
+              {m.created_by_name ?? 'System'}
+              {m.created_by_email && <span className="text-xs"> ({m.created_by_email})</span>}
+              {' · '}{new Date(m.created_at).toLocaleString()}
             </span>
           </div>
         ))}

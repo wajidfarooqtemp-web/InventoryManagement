@@ -152,7 +152,8 @@ class MovementOut(BaseModel):
     reason: Optional[str] = None
     related_transfer_id: Optional[UUID] = None
     created_by: Optional[UUID] = None
-    created_by_name: Optional[str] = None  # null for system-generated OPENING_BALANCE rows
+    created_by_name: Optional[str] = None   # null for system-generated OPENING_BALANCE rows
+    created_by_email: Optional[str] = None  # disambiguates two people sharing a first name
     created_at: datetime
     # ---------- Purchase list (Phase 6) ----------
 
@@ -181,6 +182,7 @@ class NeedsAttentionItemOut(BaseModel):
     item_id: UUID
     item_name: str
     location_name: str
+    category_name: str
     unit: str
     current_stock: float
     monthly_requirement: Optional[float] = None

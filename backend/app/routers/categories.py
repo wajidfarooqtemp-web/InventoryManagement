@@ -2,6 +2,7 @@
 Categories: same read/write rules as locations - see that file's comment.
 """
 from typing import Optional
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_pool
 from app.security import get_current_user, CurrentUser
@@ -38,7 +39,32 @@ async def create_category(body: CategoryCreate, user: CurrentUser = Depends(requ
         await record_audit(conn, user.id, "category_created", "category", str(row["id"]), None, dict(row))
     return dict(row)
 
+@router.delete("/{category_id}", status_code=204)
+async def delete_category(category_id: UUID, user: CurrentUser = Depends(require_role("admin"))):
+    """
+    A real, permanent delete - not a soft-deactivate. Only allowed when no
+    item references this category at all (active or inactive), since an
+    item pointing at a deleted category_id would break every query that
+    joins against it. Deactivating remains the right move for "we don't
+    use this anymore but items still reference it."
+    """
+    pool = get_pool()
+    async with pool.acquire() as conn, conn.transaction():
+        before = await conn.fetchrow("select id, name, active from public.categories where id=$1", category_id)
+        if before is None:
+            raise HTTPException(status_code=404, detail="Category not found.")
 
+        item_count = await conn.fetchval(
+            "select count(*) from public.inventory_items where category_id=$1", category_id
+        )
+        if item_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete - {item_count} item(s) still use this category. Reassign or deactivate them first.",
+            )
+
+        await conn.execute("delete from public.categories where id=$1", category_id)
+        await record_audit(conn, user.id, "category_deleted", "category", str(category_id), dict(before), None)
 @router.patch("/{category_id}", response_model=CategoryOut)
 async def update_category(category_id: str, body: CategoryUpdate, user: CurrentUser = Depends(require_role("manager", "admin"))):
     pool = get_pool()

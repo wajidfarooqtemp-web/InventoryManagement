@@ -16,12 +16,24 @@ type Item = {
 }
 type Option = { id: string; name: string }
 
+type NewItemDraft = {
+  name: string
+  location_id: string
+  category_id: string
+  unit: string
+  monthly_requirement: string
+}
+
 export function AdminItems() {
   const [items, setItems] = useState<Item[]>([])
   const [locations, setLocations] = useState<Option[]>([])
   const [categories, setCategories] = useState<Option[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newItem, setNewItem] = useState<NewItemDraft>({
+    name: '', location_id: '', category_id: '', unit: 'kg', monthly_requirement: '',
+  })
 
   function loadItems() {
     apiFetch('/api/v1/inventory?active=true').then(setItems)
@@ -64,6 +76,28 @@ export function AdminItems() {
       setMessage(e instanceof Error ? e.message : 'Could not upload image.')
     }
   }
+
+  async function createItem(e: React.FormEvent) {
+    e.preventDefault()
+    try {
+      await apiFetch('/api/v1/inventory', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: newItem.name,
+          location_id: newItem.location_id,
+          category_id: newItem.category_id,
+          unit: newItem.unit,
+          monthly_requirement: newItem.monthly_requirement ? parseFloat(newItem.monthly_requirement) : null,
+        }),
+      })
+      setMessage(`${newItem.name} added.`)
+      setNewItem({ name: '', location_id: '', category_id: '', unit: 'kg', monthly_requirement: '' })
+      setShowAddForm(false)
+      loadItems()
+    } catch (e) {
+      setMessage(e instanceof Error ? e.message : 'Could not add item.')
+    }
+  }
   async function deactivateItem(item: Item) {
     if (!confirm(`Deactivate ${item.name}? It will be hidden from normal inventory views but its history is kept.`)) return
     await apiFetch(`/api/v1/inventory/${item.id}/deactivate`, { method: 'PATCH' })
@@ -72,6 +106,41 @@ export function AdminItems() {
 
   return (
     <div>
+      <div className="mb-4">
+        <button onClick={() => setShowAddForm((v) => !v)} className="bg-accent text-white rounded px-4 py-1.5 text-sm">
+          {showAddForm ? 'Cancel' : '+ Add item'}
+        </button>
+      </div>
+
+      {showAddForm && (
+        <form onSubmit={createItem} className="bg-white/60 border border-cream-dark rounded-lg p-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+            <input required placeholder="Item name" value={newItem.name}
+              onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+              className="border border-cream-dark rounded px-3 py-1.5 bg-white text-sm" />
+            <select required value={newItem.location_id} onChange={(e) => setNewItem({ ...newItem, location_id: e.target.value })}
+              className="border border-cream-dark rounded px-3 py-1.5 bg-white text-sm">
+              <option value="">Location…</option>
+              {locations.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+            </select>
+            {/* Scoped to a category, as requested - this is how a new item
+                gets assigned into e.g. "Furnishings" or "Food & Kitchen" at creation time. */}
+            <select required value={newItem.category_id} onChange={(e) => setNewItem({ ...newItem, category_id: e.target.value })}
+              className="border border-cream-dark rounded px-3 py-1.5 bg-white text-sm">
+              <option value="">Category…</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            <input required placeholder="Unit (kg, box…)" value={newItem.unit}
+              onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
+              className="border border-cream-dark rounded px-3 py-1.5 bg-white text-sm" />
+            <input type="number" step="any" placeholder="Monthly requirement" value={newItem.monthly_requirement}
+              onChange={(e) => setNewItem({ ...newItem, monthly_requirement: e.target.value })}
+              className="border border-cream-dark rounded px-3 py-1.5 bg-white text-sm" />
+          </div>
+          <button type="submit" className="mt-3 bg-accent text-white rounded px-4 py-1.5 text-sm">Save item</button>
+        </form>
+      )}
+
       {message && <p className="text-sm text-status-good mb-3">{message}</p>}
       <div className="bg-white/60 border border-cream-dark rounded-lg divide-y divide-cream-dark">
         {items.map((item) => (

@@ -26,9 +26,10 @@ async def get_overview(user: CurrentUser = Depends(get_current_user)):
             """
             select i.id, i.name, i.unit, i.current_stock, i.reorder_level, i.critical_level,
                    i.needs_confirmation, i.monthly_requirement, i.monthly_requirement_min,
-                   i.monthly_requirement_max, l.name as location_name
+                   i.monthly_requirement_max, l.name as location_name, c.name as category_name
             from public.inventory_items i
             join public.locations l on l.id = i.location_id
+            join public.categories c on c.id = i.category_id
             where i.active = true
             """
         )
@@ -37,7 +38,7 @@ async def get_overview(user: CurrentUser = Depends(get_current_user)):
             """
             select m.id, m.item_id, i.name as item_name, l.name as location_name, m.period_id,
                    m.movement_type, m.quantity, m.resulting_stock, m.reason, m.related_transfer_id,
-                   m.created_by, u.name as created_by_name, m.created_at
+                   m.created_by, u.name as created_by_name, u.email as created_by_email, m.created_at
             from public.stock_movements m
             join public.inventory_items i on i.id = m.item_id
             join public.locations l on l.id = i.location_id
@@ -62,6 +63,7 @@ async def get_overview(user: CurrentUser = Depends(get_current_user)):
                 "item_id": item["id"],
                 "item_name": item["name"],
                 "location_name": item["location_name"],
+                "category_name": item["category_name"],
                 "unit": item["unit"],
                 "current_stock": float(item["current_stock"]),
                 "monthly_requirement": item["monthly_requirement"],

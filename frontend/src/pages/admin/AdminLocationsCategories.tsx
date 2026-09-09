@@ -36,7 +36,17 @@ function NamedList({ title, endpoint }: { title: string; endpoint: string }) {
     await apiFetch(`${endpoint}/${row.id}`, { method: 'PATCH', body: JSON.stringify({ active: !row.active }) })
     load()
   }
-
+  async function remove(row: Named) {
+    if (!confirm(`Permanently delete "${row.name}"? This can't be undone, and only works if no items use it.`)) return
+    try {
+      await apiFetch(`${endpoint}/${row.id}`, { method: 'DELETE' })
+      load()
+    } catch (e) {
+      // Most likely failure: items still reference this category - the
+      // backend's message already explains that clearly, just show it.
+      setError(e instanceof Error ? e.message : 'Could not delete.')
+    }
+  }
   return (
     <div className="flex-1">
       <h3 className="font-heading text-lg mb-3">{title}</h3>
@@ -44,9 +54,12 @@ function NamedList({ title, endpoint }: { title: string; endpoint: string }) {
         {rows.map((row) => (
           <div key={row.id} className="flex items-center justify-between px-3 py-2 text-sm">
             <span className={row.active ? '' : 'text-ink-soft line-through'}>{row.name}</span>
-            <button onClick={() => toggleActive(row)} className="text-accent">
-              {row.active ? 'Deactivate' : 'Reactivate'}
-            </button>
+            <span className="flex gap-3">
+              <button onClick={() => toggleActive(row)} className="text-accent">
+                {row.active ? 'Deactivate' : 'Reactivate'}
+              </button>
+              <button onClick={() => remove(row)} className="text-status-critical">Delete</button>
+            </span>
           </div>
         ))}
       </div>
