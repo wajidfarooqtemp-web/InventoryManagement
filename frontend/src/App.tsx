@@ -5,6 +5,8 @@ import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
 import { Overview } from './pages/Overview'
 import { Inventory } from './pages/Inventory'
+import { Activity } from './pages/Activity'
+import { PurchaseList } from './pages/PurchaseList'
 import { AdminLayout } from './pages/admin/AdminLayout'
 import { AdminItems } from './pages/admin/AdminItems'
 import { AdminLocationsCategories } from './pages/admin/AdminLocationsCategories'
@@ -33,8 +35,8 @@ function App() {
           >
             <Route path="/" element={<Overview />} />
             <Route path="/inventory" element={<Inventory />} />
-            <Route path="/activity" element={<ComingSoon title="Activity" />} />
-            <Route path="/purchase-list" element={<ComingSoon title="Purchase List" />} />
+            <Route path="/activity" element={<Activity />} />
+            <Route path="/purchase-list" element={<PurchaseList />} />
             <Route path="/admin" element={<AdminLayout />}>
   <Route index element={<AdminItems />} />
   <Route path="items" element={<AdminItems />} />

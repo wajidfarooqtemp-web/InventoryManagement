@@ -1,6 +1,7 @@
 """
 Categories: same read/write rules as locations - see that file's comment.
 """
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_pool
 from app.security import get_current_user, CurrentUser
@@ -12,9 +13,15 @@ router = APIRouter(prefix="/api/v1/categories", tags=["categories"])
 
 
 @router.get("", response_model=list[CategoryOut])
-async def list_categories(user: CurrentUser = Depends(get_current_user)):
+async def list_categories(active: Optional[bool] = True, user: CurrentUser = Depends(get_current_user)):
+    """
+    Defaults to active-only, so deprecated categories (Section above -
+    the old Food/Spices/Dairy/Cooking Oil split) disappear from normal
+    dropdowns without deleting their history. Pass ?active=false to see
+    only the deprecated ones (used by the admin management screen).
+    """
     pool = get_pool()
-    rows = await pool.fetch("select id, name, active from public.categories order by name")
+    rows = await pool.fetch("select id, name, active from public.categories where active = $1 order by name", active)
     return [dict(r) for r in rows]
 
 

@@ -229,3 +229,8 @@ class DataConfirmationOut(BaseModel):
     monthly_requirement_min: Optional[float] = None
     monthly_requirement_max: Optional[float] = None
     confirmation_note: Optional[str] = None
+class UserCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    email: str = Field(min_length=3, max_length=255)
+    password: str = Field(min_length=8, max_length=100)
+    role: str = "kitchen_staff"

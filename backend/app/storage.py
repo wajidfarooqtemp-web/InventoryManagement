@@ -13,7 +13,14 @@ _BUCKET = "item-images"
 
 
 def _headers():
-    return {"Authorization": f"Bearer {settings.supabase_service_role_key}"}
+    # Supabase Storage's REST API requires BOTH headers, even for the
+    # service-role key - Authorization alone silently fails. This was
+    # the actual cause of every upload returning "could not save the
+    # image" regardless of file size or type.
+    return {
+        "Authorization": f"Bearer {settings.supabase_service_role_key}",
+        "apikey": settings.supabase_service_role_key,
+    }
 
 
 async def upload_image(processed_bytes: bytes, extension: str, content_type: str) -> str:

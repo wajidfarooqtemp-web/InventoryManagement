@@ -11,8 +11,12 @@ function NamedList({ title, endpoint }: { title: string; endpoint: string }) {
   const [newName, setNewName] = useState('')
   const [error, setError] = useState<string | null>(null)
 
+  // Admin management screen needs to see BOTH active and deactivated
+  // entries (so old categories can still be reviewed/reactivated) -
+  // every other part of the app only ever asks for active=true.
   function load() {
-    apiFetch(endpoint).then(setRows)
+    Promise.all([apiFetch(`${endpoint}?active=true`), apiFetch(`${endpoint}?active=false`)])
+      .then(([active, inactive]) => setRows([...active, ...inactive]))
   }
   useEffect(load, [endpoint])
 

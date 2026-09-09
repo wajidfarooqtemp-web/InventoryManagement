@@ -5,11 +5,13 @@ since they're conceptually different actions (who someone is vs whether
 they can log in at all) and each deserves its own clear audit entry.
 """
 from uuid import UUID
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
+from app.config import settings
 from app.database import get_pool
 from app.dependencies import require_role
 from app.security import CurrentUser
-from app.schemas import UserOut, UserRoleUpdate, UserActiveUpdate
+from app.schemas import UserOut, UserRoleUpdate, UserActiveUpdate, UserCreate
 from app.audit import record_audit
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
@@ -22,6 +24,55 @@ async def list_users(user: CurrentUser = Depends(require_role("admin"))):
     pool = get_pool()
     rows = await pool.fetch("select id, name, email, role, active from public.users order by name")
     return [dict(r) for r in rows]
+
+@router.post("", response_model=UserOut, status_code=201)
+async def create_user(body: UserCreate, user: CurrentUser = Depends(require_role("admin"))):
+    """
+    Creates a real login for a new person, without needing the Supabase
+    dashboard at all. Calls Supabase's own Admin API (server-side, using
+    the service-role key - never exposed to the frontend) to create the
+    auth account; the Phase 1 database trigger then automatically creates
+    the matching public.users row, which we simply read back afterward.
+    """
+    if body.role not in _VALID_ROLES:
+        raise HTTPException(status_code=400, detail=f"Role must be one of: {', '.join(_VALID_ROLES)}")
+    if "@" not in body.email:
+        raise HTTPException(status_code=400, detail="Please provide a valid email address.")
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            f"{settings.supabase_url}/auth/v1/admin/users",
+            headers={
+                "Authorization": f"Bearer {settings.supabase_service_role_key}",
+                "apikey": settings.supabase_service_role_key,
+            },
+            json={
+                "email": body.email,
+                "password": body.password,
+                "email_confirm": True,  # internal, admin-created accounts - no verification email needed
+                "user_metadata": {"name": body.name},
+            },
+        )
+
+    if response.status_code not in (200, 201):
+        # Supabase's own message (e.g. "email already exists") is safe to
+        # pass through here - it's not internal system detail, it's a
+        # normal validation-style response the admin needs to act on.
+        detail = response.json().get("msg") or response.json().get("error_description") or "Could not create user."
+        raise HTTPException(status_code=400, detail=detail)
+
+    new_user_id = response.json()["id"]
+
+    pool = get_pool()
+    async with pool.acquire() as conn, conn.transaction():
+        # The database trigger already inserted this row defaulted to
+        # kitchen_staff - only need to change it if a different role was requested.
+        if body.role != "kitchen_staff":
+            await conn.execute("update public.users set role=$2 where id=$1", new_user_id, body.role)
+        row = await conn.fetchrow("select id, name, email, role, active from public.users where id=$1", new_user_id)
+        await record_audit(conn, user.id, "user_created", "user", str(new_user_id), None, dict(row))
+
+    return dict(row)
 
 
 @router.patch("/{user_id}/role", response_model=UserOut)
