@@ -16,9 +16,6 @@ import { AdminDataConfirmation } from './pages/admin/AdminDataConfirmation'
 // Stand-ins for routes the Layout already links to, so navigation
 // doesn't dead-end while Inventory/Activity/Purchase List/Admin get
 // built out for real in Phases 8-9.
-function ComingSoon({ title }: { title: string }) {
-  return <p className="text-ink-soft">{title} — coming in a later phase.</p>
-}
 
 function App() {
   return (

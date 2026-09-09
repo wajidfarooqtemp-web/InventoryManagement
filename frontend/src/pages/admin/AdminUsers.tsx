@@ -1,4 +1,4 @@
-import { useEffect, useState, FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { apiFetch } from '../../lib/apiClient'
 
 type User = { id: string; name: string; email: string; role: string; active: boolean }
