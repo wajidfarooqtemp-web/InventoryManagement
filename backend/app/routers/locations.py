@@ -3,6 +3,7 @@ Locations: everyone logged in can read; only manager/admin can write.
 This mirrors the RLS policies from Phase 1 - RLS is the backup, this is
 the enforcement that actually runs on every request.
 """
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_pool
 from app.security import get_current_user, CurrentUser
@@ -33,6 +34,30 @@ async def create_location(body: LocationCreate, user: CurrentUser = Depends(requ
         await record_audit(conn, user.id, "location_created", "location", str(row["id"]), None, dict(row))
     return dict(row)
 
+@router.delete("/{location_id}", status_code=204)
+async def delete_location(location_id: UUID, user: CurrentUser = Depends(require_role("admin"))):
+    """
+    Same safety rule as category deletion: only allowed when no item
+    references this location at all. Deactivating remains the right
+    move otherwise.
+    """
+    pool = get_pool()
+    async with pool.acquire() as conn, conn.transaction():
+        before = await conn.fetchrow("select id, name, active from public.locations where id=$1", location_id)
+        if before is None:
+            raise HTTPException(status_code=404, detail="Location not found.")
+
+        item_count = await conn.fetchval(
+            "select count(*) from public.inventory_items where location_id=$1", location_id
+        )
+        if item_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete - {item_count} item(s) still use this location. Reassign or deactivate them first.",
+            )
+
+        await conn.execute("delete from public.locations where id=$1", location_id)
+        await record_audit(conn, user.id, "location_deleted", "location", str(location_id), dict(before), None)
 
 @router.patch("/{location_id}", response_model=LocationOut)
 async def update_location(location_id: str, body: LocationUpdate, user: CurrentUser = Depends(require_role("manager", "admin"))):
