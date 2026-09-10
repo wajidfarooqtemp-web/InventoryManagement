@@ -23,6 +23,9 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
     const body = await response.json().catch(() => ({}))
     throw new Error(body.detail || `Request failed (${response.status})`)
   }
+  // 204 No Content (used by DELETE endpoints) has no body at all -
+  // calling .json() on it throws. Treat "nothing to parse" as success.
+  if (response.status === 204) return null
   return response.json()
 }
 // Separate from apiFetch because file uploads must NOT set

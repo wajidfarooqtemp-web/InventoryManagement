@@ -10,6 +10,8 @@ function NamedList({ title, endpoint }: { title: string; endpoint: string }) {
   const [rows, setRows] = useState<Named[]>([])
   const [newName, setNewName] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
 
   // Admin management screen needs to see BOTH active and deactivated
   // entries (so old categories can still be reviewed/reactivated) -
@@ -36,6 +38,25 @@ function NamedList({ title, endpoint }: { title: string; endpoint: string }) {
     await apiFetch(`${endpoint}/${row.id}`, { method: 'PATCH', body: JSON.stringify({ active: !row.active }) })
     load()
   }
+  function startEdit(row: Named) {
+    setEditingId(row.id)
+    setEditValue(row.name)
+  }
+
+  async function saveEdit(row: Named) {
+    if (!editValue.trim() || editValue.trim() === row.name) {
+      setEditingId(null)
+      return
+    }
+    try {
+      await apiFetch(`${endpoint}/${row.id}`, { method: 'PATCH', body: JSON.stringify({ name: editValue.trim() }) })
+      setEditingId(null)
+      setError(null)
+      load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not rename.')
+    }
+  }
   async function remove(row: Named) {
     if (!confirm(`Permanently delete "${row.name}"? This can't be undone, and only works if no items use it.`)) return
     try {
@@ -52,9 +73,24 @@ function NamedList({ title, endpoint }: { title: string; endpoint: string }) {
       <h3 className="font-heading text-lg mb-3">{title}</h3>
       <div className="bg-white/60 border border-cream-dark rounded-lg divide-y divide-cream-dark mb-3">
         {rows.map((row) => (
-          <div key={row.id} className="flex items-center justify-between px-3 py-2 text-sm">
-            <span className={row.active ? '' : 'text-ink-soft line-through'}>{row.name}</span>
-            <span className="flex gap-3">
+          <div key={row.id} className="flex items-center justify-between px-3 py-2 text-sm gap-2">
+            {editingId === row.id ? (
+              <input
+                autoFocus value={editValue} onChange={(e) => setEditValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && saveEdit(row)}
+                onBlur={() => saveEdit(row)}
+                className="flex-1 border border-cream-dark rounded px-2 py-1 bg-white text-sm"
+              />
+            ) : (
+              <span
+                className={`flex-1 cursor-pointer ${row.active ? '' : 'text-ink-soft line-through'}`}
+                onClick={() => startEdit(row)}
+                title="Click to rename"
+              >
+                {row.name}
+              </span>
+            )}
+            <span className="flex gap-3 shrink-0">
               <button onClick={() => toggleActive(row)} className="text-accent">
                 {row.active ? 'Deactivate' : 'Reactivate'}
               </button>
