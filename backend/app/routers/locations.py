@@ -3,6 +3,7 @@ Locations: everyone logged in can read; only manager/admin can write.
 This mirrors the RLS policies from Phase 1 - RLS is the backup, this is
 the enforcement that actually runs on every request.
 """
+from typing import Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException
 from app.database import get_pool
@@ -15,9 +16,15 @@ router = APIRouter(prefix="/api/v1/locations", tags=["locations"])
 
 
 @router.get("", response_model=list[LocationOut])
-async def list_locations(user: CurrentUser = Depends(get_current_user)):
+async def list_locations(active: Optional[bool] = True, user: CurrentUser = Depends(get_current_user)):
+    """
+    Same pattern as categories.py: defaults to active-only for normal use,
+    but the admin screen calls this twice (active=true and active=false)
+    to show both groups - this filter is what makes that actually work
+    instead of returning the same full list both times.
+    """
     pool = get_pool()
-    rows = await pool.fetch("select id, name, active from public.locations order by name")
+    rows = await pool.fetch("select id, name, active from public.locations where active = $1 order by name", active)
     return [dict(r) for r in rows]
 
 
