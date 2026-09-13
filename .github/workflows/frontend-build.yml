@@ -33,7 +33,15 @@ jobs:
       # Vercel build on its own infrastructure instead - the same way it
       # always did. We're only changing WHEN that's triggered: from "any
       # push" to "only a push this workflow has already approved."
+      #
+      # IMPORTANT: this step deliberately overrides the job's default
+      # working-directory (frontend) back to the repo root. The .vercel
+      # link at the repo root already knows the project lives in
+      # "frontend" (see .vercel/repo.json) - running this FROM frontend
+      # makes the CLI append that path a second time, producing the
+      # broken "frontend/frontend" path seen in earlier failed runs.
       - name: Deploy to Vercel (production)
+        working-directory: .
         run: |
           npm install -g vercel
           vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
