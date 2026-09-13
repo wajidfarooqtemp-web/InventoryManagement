@@ -1,0 +1,11 @@
+{
+  "remoteName": "origin",
+  "projects": [
+    {
+      "id": "prj_Ax0aa3sR4UJNiS3CmMqrBQmLB9nE",
+      "name": "inventory-management",
+      "directory": "frontend",
+      "orgId": "team_ztAu3pGVBekEJpoHGmuM2rL0"
+    }
+  ]
+}

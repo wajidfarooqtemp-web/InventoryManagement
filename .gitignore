@@ -17,3 +17,4 @@ build/
 # Editor
 .vscode/
 .DS_Store
+.env*
