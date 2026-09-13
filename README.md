@@ -1,18 +1,18 @@
 # Inventory Management System
 
-A production inventory system built for real daily use — kitchen staff record stock in seconds, managers oversee purchasing and corrections, and leadership gets an at-a-glance view of what's healthy, low, or needs attention.
+A production inventory system built for real daily use. Kitchen staff record stock in seconds, managers oversee purchasing and corrections, and leadership gets an at a glance view of what's healthy, low, or needs attention.
 
-**Guiding principle:** simple to use, not simplistic. The interface stays fast and visual for kitchen use; the backend underneath stays fully auditable, transactional, and role-secured.
+**Guiding principle:** simple to use, not simplistic. The interface stays fast and visual for kitchen use, while the backend underneath stays fully auditable, transactional, and role secured.
 
 ---
 
 ## What it does
 
-- **Kitchen staff** tap an item's photo, tap Used or Received, tap a quantity — done in a few taps, no typing required.
+- **Kitchen staff** tap an item's photo, tap Used or Received, tap a quantity, and they're done. No typing required.
 - **Managers** edit items, correct mistakes via adjustments (never by silently rewriting history), manage the purchase list, and review activity.
 - **Admins** manage users, locations, categories, and resolve data that still needs confirmation.
-- Every stock change is a permanent, timestamped movement record — nothing is ever overwritten, only corrected.
-- Low stock is detected automatically by deterministic threshold rules (not AI) and feeds a purchase-list workflow.
+- Every stock change is a permanent, timestamped movement record. Nothing is ever overwritten, only corrected.
+- Low stock is detected automatically by deterministic threshold rules, not AI, and feeds a purchase list workflow.
 
 ---
 
@@ -33,12 +33,12 @@ A production inventory system built for real daily use — kitchen staff record 
 
 ```
 ┌─────────────────────┐
-│  React frontend       │  Role-aware UI: kitchen / manager / admin
+│  React frontend       │  Role aware UI: kitchen / manager / admin
 └──────────┬────────────┘
-           │ HTTPS, bearer token (Supabase-issued)
+           │ HTTPS, bearer token (Supabase issued)
            ▼
 ┌─────────────────────┐
-│      FastAPI           │  ← single authorization boundary
+│      FastAPI           │  Single authorization boundary
 │  - JWT verification    │
 │  - Role enforcement    │
 │  - Transactional stock │
@@ -55,7 +55,7 @@ A production inventory system built for real daily use — kitchen staff record 
 └─────────────────────┘
 ```
 
-Every stock change (Receive / Use / Adjust / Transfer) runs inside one atomic database transaction, is protected against duplicate submissions (idempotency keys), and is safe under concurrent use (row-level locking) — two people recording stock on the same item at the same instant can never silently overwrite each other.
+Every stock change (Receive, Use, Adjust, Transfer) runs inside one atomic database transaction. It is protected against duplicate submissions with idempotency keys, and it is safe under concurrent use through row level locking, so two people recording stock on the same item at the same instant can never silently overwrite each other.
 
 ---
 
@@ -80,7 +80,7 @@ Every stock change (Receive / Use / Adjust / Transfer) runs inside one atomic da
    Live backend API        Live web app
 ```
 
-A failing test or a broken build stops the pipeline before either platform deploys — the previous, working version stays live. Nothing reaches production without passing automated checks first.
+A failing test or a broken build stops the pipeline before either platform deploys, so the previous, working version stays live. Nothing reaches production without passing automated checks first.
 
 ---
 
@@ -92,13 +92,13 @@ inventory-system/
 ├── frontend/            React app (pages, components, auth)
 ├── supabase/
 │   └── migrations/     Ordered SQL migrations (schema, RLS, seed data)
-└── .github/workflows/  CI: backend tests, frontend build + deploy
+└── .github/workflows/  CI: backend tests, frontend build and deploy
 ```
 
 ---
 
 ## Status
 
-Core system complete: authentication & roles, inventory catalog, monthly stock periods, the full stock-movement engine, purchase-list automation, secure image uploads, admin management screens, and a gated CI/CD pipeline.
+The core system is complete: authentication and roles, inventory catalog, monthly stock periods, the full stock movement engine, purchase list automation, secure image uploads, admin management screens, and a gated CI/CD pipeline.
 
-Email/scheduled alerts are designed for but intentionally not yet enabled.
+Email and scheduled alerts are designed for but intentionally not yet enabled.
