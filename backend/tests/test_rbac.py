@@ -21,11 +21,13 @@ async def test_admin_can_create_location(client, admin_token):
         json={"name": "RBAC Test Location Admin"},
     )
     assert response.status_code == 201
-    # Clean up - tests shouldn't leave real-looking data behind.
+    # Actually DELETE it, not just deactivate - a deactivated row still
+    # blocks the unique-name check, so a merely-deactivated leftover from
+    # a previous run would make every future run of this test fail with
+    # 409, even though the code itself is behaving correctly.
     location_id = response.json()["id"]
-    await client.patch(
+    await client.delete(
         f"/api/v1/locations/{location_id}", headers={"Authorization": f"Bearer {admin_token}"},
-        json={"active": False},
     )
 
 
