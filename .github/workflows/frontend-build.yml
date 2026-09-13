@@ -26,15 +26,17 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-      # Only reached if the build above succeeded. This is the actual
-      # "delivery driver" - Vercel no longer watches GitHub itself
-      # (disconnected), so this is now the ONLY thing that deploys.
+      # Only reached if the build/test steps above succeeded - that's the
+      # actual gate. Rather than building locally in this runner and
+      # uploading it (vercel build --prebuilt), which has real unresolved
+      # problems with monorepo-style projects like this one, we let
+      # Vercel build on its own infrastructure instead - the same way it
+      # always did. We're only changing WHEN that's triggered: from "any
+      # push" to "only a push this workflow has already approved."
       - name: Deploy to Vercel (production)
         run: |
           npm install -g vercel
-          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-          vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-          vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+          vercel deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
