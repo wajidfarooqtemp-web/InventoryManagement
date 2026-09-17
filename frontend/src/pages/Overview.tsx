@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { apiFetch } from '../lib/apiClient'
 import { StatusBadge } from '../components/StatusBadge'
+import { Notes } from '../components/Notes'
 
 type NeedsAttentionItem = {
   item_id: string
@@ -22,6 +23,7 @@ type RecentActivity = {
   movement_type: string
   quantity: number
   created_by_name: string | null
+  created_by_email: string | null
   created_at: string
 }
 
@@ -105,7 +107,7 @@ export function Overview() {
           </div>
         )}
       </section>
-
+      <Notes />
       <section>
         <h2 className="font-heading text-lg mb-3">Recent Activity</h2>
         {data.recent_activity.length === 0 ? (
@@ -119,7 +121,9 @@ export function Overview() {
                   <span className="text-ink-soft"> · {m.location_name} · {formatMovement(m)}</span>
                 </div>
                 <span className="text-ink-soft">
-                  {m.created_by_name ?? 'System'} · {new Date(m.created_at).toLocaleString()}
+                  {m.created_by_name ?? 'System'}
+                  {m.created_by_email && <span className="text-xs"> ({m.created_by_email})</span>}
+                  {' · '}{m.location_name} · {new Date(m.created_at).toLocaleString()}
                 </span>
               </div>
             ))}

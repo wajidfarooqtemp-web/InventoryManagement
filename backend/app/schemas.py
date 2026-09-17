@@ -236,3 +236,20 @@ class UserCreate(BaseModel):
     email: str = Field(min_length=3, max_length=255)
     password: str = Field(min_length=8, max_length=100)
     role: str = "kitchen_staff"
+# ---------- Notes (general noticeboard) ----------
+
+class NoteOut(BaseModel):
+    id: UUID
+    content: str
+    created_by: UUID
+    created_by_name: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class NoteCreate(BaseModel):
+    content: str = Field(min_length=1, max_length=2000)
+
+
+class NoteUpdate(BaseModel):
+    content: str = Field(min_length=1, max_length=2000)

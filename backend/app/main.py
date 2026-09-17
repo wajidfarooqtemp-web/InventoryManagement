@@ -8,7 +8,7 @@ from app.database import connect_db, disconnect_db
 from app.rate_limit import limiter
 from app.security_headers import SecurityHeadersMiddleware
 from app.error_handlers import unhandled_exception_handler
-from app.routers import profile, locations, categories, inventory, movements, periods, activity, purchase, overview, users, data_confirmation
+from app.routers import profile, locations, categories, inventory, movements, periods, activity, purchase, overview, users, data_confirmation, notes
 
 app = FastAPI(title="Inventory System API")
 
@@ -53,6 +53,7 @@ app.include_router(purchase.router)
 app.include_router(overview.router)
 app.include_router(users.router)
 app.include_router(data_confirmation.router)
+app.include_router(notes.router)
 
 @app.get("/health")
 def health():
