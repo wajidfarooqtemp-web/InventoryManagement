@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { apiFetch } from '../lib/apiClient'
 
 type Movement = {
@@ -14,12 +15,14 @@ type Movement = {
   created_at: string
 }
 type Location = { id: string; name: string }
+type Note = { id: string; content: string; created_by_name: string; created_at: string }
 
 const MOVEMENT_TYPES = ['RECEIVE', 'USE', 'ADJUSTMENT', 'TRANSFER_IN', 'TRANSFER_OUT']
 
 export function Activity() {
   const [movements, setMovements] = useState<Movement[]>([])
   const [locations, setLocations] = useState<Location[]>([])
+  const [recentNotes, setRecentNotes] = useState<Note[]>([])
   const [locationFilter, setLocationFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [offset, setOffset] = useState(0)
@@ -42,6 +45,11 @@ export function Activity() {
 
   useEffect(() => {
     apiFetch('/api/v1/locations').then(setLocations)
+    // Just a small, capped preview here - a read-only glance, not a
+    // second place to write/edit notes. The real noticeboard (post,
+    // edit, delete) stays on Overview so there's one home for that,
+    // not two competing ones.
+    apiFetch('/api/v1/notes?limit=3').then(setRecentNotes).catch(() => {})
   }, [])
 
   // Filters changing resets the feed from the top, rather than appending.
@@ -58,6 +66,22 @@ export function Activity() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
+      {recentNotes.length > 0 && (
+        <section className="bg-white/60 border border-cream-dark rounded-lg p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-heading text-base">Recent Notes</h2>
+            <Link to="/" className="text-accent text-xs">See all →</Link>
+          </div>
+          <div className="space-y-2">
+            {recentNotes.map((note) => (
+              <p key={note.id} className="text-sm">
+                <span className="text-ink-soft">{note.created_by_name}:</span> {note.content}
+              </p>
+            ))}
+          </div>
+        </section>
+      )}
+
       <div className="flex gap-3">
         <select value={locationFilter} onChange={(e) => setLocationFilter(e.target.value)}
           className="border border-cream-dark rounded px-3 py-2 bg-white text-sm">
