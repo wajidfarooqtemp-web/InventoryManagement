@@ -31,19 +31,32 @@ export function AdminItems() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [search, setSearch] = useState('')
   const [newItem, setNewItem] = useState<NewItemDraft>({
     name: '', location_id: '', category_id: '', unit: 'kg', monthly_requirement: '',
   })
 
-  function loadItems() {
-    apiFetch('/api/v1/inventory?active=true').then(setItems)
+  // Search is sent to the backend (?q=) rather than filtering the array
+  // locally, so this keeps working correctly as the catalog grows past
+  // what's practical to load all at once.
+  function loadItems(query = search) {
+    const params = new URLSearchParams({ active: 'true' })
+    if (query) params.set('q', query)
+    apiFetch(`/api/v1/inventory?${params.toString()}`).then(setItems)
   }
 
   useEffect(() => {
-    loadItems()
     apiFetch('/api/v1/locations').then(setLocations)
     apiFetch('/api/v1/categories').then(setCategories)
   }, [])
+
+  // Debounced: waits 300ms after typing stops before hitting the API,
+  // instead of firing a request on every single keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => loadItems(search), 300)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search])
 
   // A single PATCH used for every field on the edit row - thresholds,
   // category, location, unit. current_stock is deliberately never part
@@ -106,10 +119,15 @@ export function AdminItems() {
 
   return (
     <div>
-      <div className="mb-4">
-        <button onClick={() => setShowAddForm((v) => !v)} className="bg-accent text-white rounded px-4 py-1.5 text-sm">
+      <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:items-center">
+        <button onClick={() => setShowAddForm((v) => !v)} className="bg-accent text-white rounded px-4 py-1.5 text-sm shrink-0 self-start">
           {showAddForm ? 'Cancel' : '+ Add item'}
         </button>
+        <input
+          type="text" placeholder="Search items…" value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 border border-cream-dark rounded px-3 py-1.5 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+        />
       </div>
 
       {showAddForm && (
